@@ -77,8 +77,9 @@ void check() {
       adzanFlag[counter] = false;
     }
     
-    counter++;
-    if (counter >= 5) counter = 0;
+    //counter++;
+    //if (counter >= 5) counter = 0;
+    counter = (counter + 1) % 6;
   }
 
   // ================= KIRIM DATA JWS =================

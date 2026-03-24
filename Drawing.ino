@@ -187,6 +187,7 @@ float sholatT[]={JWS.floatImsak,JWS.floatSubuh,JWS.floatTerbit,JWS.floatDzuhur,J
   static bool s = 0; // 0 = masuk, 1 = keluar
   static uint32_t   lsRn;
   uint32_t          Tmr = millis(); 
+  static uint8_t   list = 0;
 
   //int hours, minutes;
   char buff_jam[6]; // Format HH:MM hanya butuh 6 karakter

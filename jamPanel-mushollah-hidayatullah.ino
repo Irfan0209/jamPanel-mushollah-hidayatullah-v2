@@ -52,8 +52,7 @@ noEEPROM    value
 #include <Wire.h>
 #include <RtcDS3231.h>
 #include <ESP_EEPROM.h>
-
-#include "PrayerTimes.h"
+#include <Prayer.h>
 
 
 #include <fonts/SystemFont5x7.h>
@@ -156,7 +155,7 @@ bool       panelState = false; // false = OFF, true = ON
 /*============== end ================*/
 
 enum Show{
- // ANIM_ZONK,
+  ANIM_JAM,
   ANIM_BIGFONT,
   ANIM_TEXT1,
   ANIM_TEXT2,
