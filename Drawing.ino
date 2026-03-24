@@ -75,15 +75,13 @@ void drawDate(){
   static uint32_t   lsRn;
   uint32_t          Tmr = millis();
    
-  uint8_t Speed = speedDate;
+  uint8_t Speed = config.speedDate;
   uint8_t daynow   = now.DayOfWeek();    // load day Number
   
-  //char buff_date[30];
-
   char buff_date[100]; // Pastikan ukuran buffer cukup besar
     snprintf(buff_date, sizeof(buff_date), "%s %s %02d-%02d-%04d %02d %s %04dH",
     Hari[daynow], pasar[jumlahhari() % 5], now.Day(), now.Month(), now.Year(),
-    tanggalHijriah.tanggal, namaBulanHijriah[tanggalHijriah.bulan - 1], tanggalHijriah.tahun);
+    Hijir.getHijriyahDate, namaBulanHijriah[Hijir.getHijriyahMonth - 1], Hijir.getHijriyahYear);
 
   fType(0); 
   if (fullScroll == 0) { // Hitung hanya sekali
@@ -100,15 +98,14 @@ void drawDate(){
     x = 0;
     show = ANIM_TEXT;
   }
-}
-
+ }
 }
 
 void runningTextInfo1() {
   static uint32_t x = 0;
   static uint32_t lsRn;
   uint32_t Tmr = millis();
-  uint16_t Speed = speedText1;
+  uint8_t Speed = config.speedText1;
 
   // Simpan teks di Flash (PROGMEM)
   
@@ -145,7 +142,7 @@ void runningTextInfo2() {
   static uint32_t x = 0;
   static uint32_t lsRn;
   uint32_t Tmr = millis();
-  uint8_t Speed = speedText2;
+  uint8_t Speed = config.speedText2;
 
   // Simpan teks di Flash (PROGMEM)
   
@@ -180,7 +177,7 @@ void runningTextInfo2() {
 void jadwalSholat(){
  
 if (adzan) return;
-float sholatT[]={JWS.floatImsak,JWS.floatSubuh,JWS.floatTerbit,JWS.floatDzuhur,JWS.floatAshar,JWS.floatMaghrib,JWS.floatIsya};
+  float sholatT[]={JWS.floatImsak,JWS.floatSubuh,JWS.floatTerbit,JWS.floatDzuhur,JWS.floatAshar,JWS.floatMaghrib,JWS.floatIsya};
 
   RtcDateTime now = Rtc.GetDateTime();
   static uint8_t x = 0;
@@ -333,9 +330,9 @@ void blinkBlock()
     DoSwap = true;
 
     // Update countdown setiap detik
-    if (noww - lsRn > 1000)
+    if (now - lsRn > 1000)
     {
-        lsRn = noww;
+        lsRn = now;
         ct++;
     }
 

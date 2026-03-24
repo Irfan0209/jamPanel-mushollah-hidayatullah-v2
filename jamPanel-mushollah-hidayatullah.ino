@@ -98,7 +98,7 @@ struct Config {
   double latitude ;
   double longitude ;
   uint8_t zonawaktu;
-  int Correction ; //Koreksi tanggal hijriyah, -1 untuk mengurangi, 0 tanpa koreksi, 1 untuk menambah
+  int8_t Correction ; //Koreksi tanggal hijriyah, -1 untuk mengurangi, 0 tanpa koreksi, 1 untuk menambah
   uint8_t   brightness;//    = 5;
   uint8_t    speedDate;//      = 40; // Kecepatan default date
   uint8_t    speedText1;//     = 40; // Kecepatan default text  
@@ -131,7 +131,7 @@ uint8_t    DHeight       = Disp.height();
 
 // Variabel untuk waktu, tanggal, teks berjalan, tampilan ,dan kecerahan
 bool       adzan         = 0;
-int8_t        sholatNow     = -1;
+int8_t     sholatNow     = -1;
 bool       reset_x       = 0; 
 /*======library tambahan=======*/
 bool       flagAnim = false;
@@ -139,38 +139,21 @@ float      dataFloat[10];
 int8_t     dataInteger[10];
 bool       stateSendSholat = false; 
 bool       stateBuzzWar    = 0;
-//bool       counterName     = 1;
 bool       DoSwap          = false;
 bool       panelState = false; // false = OFF, true = ON
-
-//bool showVolumeTemp = false;
-//uint32_t volumeDisplayMillis = 0;
-//constexpr uint16_t volumeDisplayDuration = 2000; // 1 detik
-//
-//constexpr uint8_t MAX_VOLUME = 25;
-//constexpr uint8_t MIN_VOLUME = 0;
-
-//byte volume = 10;
 
 /*============== end ================*/
 
 enum Show{
+  ANIM_INFO,
   ANIM_JAM,
-  ANIM_BIGFONT,
-  ANIM_TEXT1,
-  ANIM_TEXT2,
-  ANIM_TEXT3,
-  ANIM_TEXT4,
-  ANIM_TEXT5,
-  ANIM_NAME,
-  ANIM_DATE,
+  ANIM_TEXT,
   ANIM_SHOLAT,
   ANIM_ADZAN,
   ANIM_IQOMAH,
   ANIM_BLINK,
-  ANIM_COUNTER
 };
-Show show = ANIM_BIGFONT;
+Show show = ANIM_JAM;
 
 #define EEPROM_SIZE       2000
 
@@ -225,29 +208,6 @@ Show show = ANIM_BIGFONT;
 
 #define ADDR_STATEALARM   1572   // 1
 
-
-/*void saveStringToEEPROM(int startAddr, String data, int maxLength) {
-  for (int i = 0; i < maxLength; i++) {
-    if (i < data.length()) {
-      EEPROM.write(startAddr + i, data[i]);
-    } else {
-      EEPROM.write(startAddr + i, 0); // null terminate / padding
-    }
-  }
-}
-
-void saveFloatToEEPROM(int addr, float value) {
-  byte *data = (byte*)(void*)&value;
-  for (int i = 0; i < sizeof(float); i++) {
-    EEPROM.write(addr + i, data[i]);
-  }
-}
-
-void saveIntToEEPROM(int addr, int16_t value) {
-  EEPROM.write(addr, lowByte(value));
-  EEPROM.write(addr + 1, highByte(value));
-}*/
-
 // Menggunakan const char* (Array of Character) menggantikan objek String
 void saveStringToEEPROM(int startAddr, const char* data, int maxLength) {
   int len = strlen(data); // Hitung panjang teks asli
@@ -273,18 +233,6 @@ void saveIntToEEPROM(int addr, int16_t value) {
 }
 
 // Fungsi untuk mengatur jam, tanggal, running text, dan kecerahan dari Serial
-/*void handleSetTimeSerial() {
-  if (!Serial.available()) return;
-
-  String input = Serial.readStringUntil('\n');
-  input.trim(); // hapus spasi dan newline
-
-  if (input.length() == 0) return;
-  
-  // Panggil fungsi getData() untuk memproses input
-  getData(input);
-}*/
-
 void handleSetTimeSerial() {
   static char buffer[255];
   static uint8_t index = 0;
@@ -391,14 +339,13 @@ void setup() {
 }
 
 void loop() {
-
-//server.handleClient();
- // ArduinoOTA.handle();
+  DoSwap  = false ;
+  Disp.clear();
   check();
   islam();
   jadwalSholat();
- //checkConnectedDevices();
-
+  handleSetTimeSerial();
+  
   switch(show) {
     case ANIM_JAM:
       drawTime();
@@ -421,10 +368,6 @@ void loop() {
     case ANIM_BLINK:
       blinkBlock();
       break;
-//    case ANIM_ZONK :
-//      Disp.clear();
-//      adzan = 1;
-//    break;
   };
   yield(); // Pastikan WiFi tetap berjalan
 }
