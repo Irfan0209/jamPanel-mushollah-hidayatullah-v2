@@ -878,7 +878,7 @@ uint8_t I2C_ClearBus() {
   return 0; // all ok
 }
 
-void buzzerWarning(uint8_t cek){
+void buzzerWarning(bool cek){
 
    static bool state = false;
    static uint32_t save = 0;
@@ -895,7 +895,7 @@ void buzzerWarning(uint8_t cek){
     
 }
 
-void Buzzer(uint8_t state)
+void Buzzer(bool state)
   {
     if(!config.stateBuzzer) return;
     
