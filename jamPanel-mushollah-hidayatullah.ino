@@ -78,7 +78,7 @@ noEEPROM    value
 char password[20] = "00000000";
 
 // Object Declarations
-DMDESP Disp(2,1);
+DMDESP Disp(DISPLAYS_WIDE,DISPLAYS_HIGH);
 
 //create object
 RtcDS3231<TwoWire> Rtc(Wire);
@@ -139,6 +139,7 @@ float      dataFloat[10];
 int8_t     dataInteger[10];
 bool       stateSendSholat = false; 
 bool       stateBuzzWar    = 0;
+bool       butuhHitungJadwal = true;
 bool       DoSwap          = false;
 bool       panelState = false; // false = OFF, true = ON
 
@@ -400,6 +401,7 @@ void getData(const char* data) {
 
       Rtc.SetDateTime(RtcDateTime(tahun, bulan, tanggal, jam, menit, detik));
       stateSendSholat = 1;
+      butuhHitungJadwal = true;
     } 
     
     else if (key_len == 4 && strncmp(data, "text", 4) == 0) {
@@ -477,17 +479,21 @@ void getData(const char* data) {
     else if (key_len == 2 && strncmp(data, "Lt", 2) == 0) {
       config.latitude = roundf(atof(ptr) * 1000000.0) / 1000000.0;
       saveFloatToEEPROM(ADDR_LATITUDE, config.latitude);
+      butuhHitungJadwal = true;
     } else if (key_len == 2 && strncmp(data, "Lo", 2) == 0) {
       config.longitude = roundf(atof(ptr) * 1000000.0) / 1000000.0;
       saveFloatToEEPROM(ADDR_LONGITUDE, config.longitude);
+      butuhHitungJadwal = true;
     } 
     
     else if (key_len == 2 && strncmp(data, "Tz", 2) == 0) {
       config.zonawaktu = atoi(ptr);
       saveIntToEEPROM(ADDR_TZ, config.zonawaktu);
+      butuhHitungJadwal = true;
     } else if (key_len == 2 && strncmp(data, "Al", 2) == 0) {
       config.altitude = atoi(ptr);
       saveIntToEEPROM(ADDR_ALTITUDE, config.altitude);
+      butuhHitungJadwal = true;
     } 
     
     // Bagian Index dengan pemisah '-'
@@ -509,6 +515,7 @@ void getData(const char* data) {
       uint8_t indexKoreksi = atoi(ptr);
       dataIhty[indexSholat] = indexKoreksi;
       EEPROM.write(ADDR_IHTY + indexSholat, indexKoreksi);
+      butuhHitungJadwal = true;
     } 
     
     else if (key_len == 2 && strncmp(data, "Da", 2) == 0) {
@@ -519,6 +526,7 @@ void getData(const char* data) {
       config.Correction = atoi(ptr);
       EEPROM.write(ADDR_CORRECTION, config.Correction & 0xFF);
       EEPROM.write(ADDR_CORRECTION + 1, (config.Correction >> 8) & 0xFF);
+      butuhHitungJadwal = true;
     } 
     
     else if (key_len == 3 && strncmp(data, "Bzr", 3) == 0) {
@@ -615,32 +623,32 @@ void getData(const char* data) {
 void loadFromEEPROM() {
   //Serial.println("=== Membaca Data dari EEPROM ===");
  
-  for (int i = 0; i < 250; i++) {
+  for (uint8_t i = 0; i < 250; i++) {
     config.text1[i] = EEPROM.read(ADDR_TEXT1 + i);
     if (config.text1[i] == 0) break;
   }
 
-  for (int i = 0; i < 250; i++) {
+  for (uint8_t i = 0; i < 250; i++) {
     config.text2[i] = EEPROM.read(ADDR_TEXT2 + i);
     if (config.text2[i] == 0) break;
   }
 
-  for (int i = 0; i < 250; i++) {
+  for (uint8_t i = 0; i < 250; i++) {
     config.text3[i] = EEPROM.read(ADDR_TEXT3 + i);
     if (config.text3[i] == 0) break;
   }
 
-  for (int i = 0; i < 250; i++) {
+  for (uint8_t i = 0; i < 250; i++) {
     config.text4[i] = EEPROM.read(ADDR_TEXT4 + i);
     if (config.text4[i] == 0) break;
   }
 
-  for (int i = 0; i < 250; i++) {
+  for (uint8_t i = 0; i < 250; i++) {
     config.text5[i] = EEPROM.read(ADDR_TEXT5 + i);
     if (config.text5[i] == 0) break;
   }
 
-  for (int i = 0; i < 250; i++) {
+  for (uint8_t i = 0; i < 250; i++) {
     config.name[i] = EEPROM.read(ADDR_NAME + i);
     if (config.name[i] == 0) break;
   }
@@ -681,7 +689,7 @@ void loadFromEEPROM() {
 
   config.altitude = EEPROM.read(ADDR_ALTITUDE) | (EEPROM.read(ADDR_ALTITUDE + 1) << 8);
 
-  for (int i = 0; i < 6; i++) {
+  for (uint8_t i = 0; i < 6; i++) {
     iqomah[i] = EEPROM.read(ADDR_IQOMAH + i);
     #if DEBUG
       Serial.print("Iqomah[");
@@ -691,7 +699,7 @@ void loadFromEEPROM() {
     #endif
   }
 
-  for (int i = 0; i < 6; i++) {
+  for (uint8_t i = 0; i < 6; i++) {
     displayBlink[i] = EEPROM.read(ADDR_BLINK + i);
     #if DEBUG
       Serial.print("Blink[");
@@ -701,7 +709,7 @@ void loadFromEEPROM() {
     #endif
   }
 
-  for (int i = 0; i < 6; i++) {
+  for (uint8_t i = 0; i < 6; i++) {
     dataIhty[i] = EEPROM.read(ADDR_IHTY + i);
     #if DEBUG
       Serial.print("Ihtiyath[");
@@ -727,7 +735,7 @@ void loadFromEEPROM() {
 
   config.stateMode = EEPROM.read(ADDR_MODE);
 
-  for (int i = 0; i < 8; i++) {
+  for (uint8_t i = 0; i < 8; i++) {
     password[i] = EEPROM.read(ADDR_PASSWORD + i);
   }
   password[8] = '\0';
