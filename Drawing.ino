@@ -1,39 +1,36 @@
-const char msg[] PROGMEM = "MUSHOLLAH HIDAYATULLAH RT19/RW03,DODOKAN,TANJUNGSARI";
-const char * const pasar[] PROGMEM = {"WAGE", "KLIWON", "LEGI", "PAHING", "PON"}; 
-const char * const Hari[] PROGMEM = {"AHAD","SENIN","SELASA","RABU","KAMIS","JUM'AT","SABTU"};
-const char * const bulanMasehi[] PROGMEM = {"JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER" };
-const char msg1[] PROGMEM ="LURUSKAN DAN RAPATKAN SHAFF SHOLAT";
-const char * const namaBulanHijriah[] PROGMEM = {
+//const char msg[] PROGMEM = "MUSHOLLAH HIDAYATULLAH RT19/RW03,DODOKAN,TANJUNGSARI";
+ char *  pasar[]  = {"WAGE", "KLIWON", "LEGI", "PAHING", "PON"}; 
+ char *  Hari[]  = {"AHAD","SENIN","SELASA","RABU","KAMIS","JUM'AT","SABTU"};
+//const char * const bulanMasehi[] PROGMEM = {"JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER" };
+//const char msg1[] PROGMEM ="LURUSKAN DAN RAPATKAN SHAFF SHOLAT";
+ char * namaBulanHijriah[] = {
     "MUHARRAM", "SHAFAR", "RABIUL AWAL",
     "RABIUL AKHIR", "JUMADIL AWAL", 
     "JUMADIL AKHIR", "RAJAB",
     "SYA'BAN", "RAMADHAN", "SYAWAL",
     "DZULQA'DAH", "DZULHIJAH"
 };
- const char jadwal[][8] PROGMEM = {
-    "SUBUH ", "TERBIT ", "DZUHUR ", "ASHAR ", 
-    "TRBNM ", "MAGRIB ", "ISYA' "
-  };
+// const char jadwal[][8] PROGMEM = {"SUBUH", "TERBIT", "DZUHUR", "ASHAR", "MAGRIB", "ISYA'"};
 
 
 void drawTime()
 {
-    //if (adzan) return;
-  
+    if (adzan) return;
+    
     RtcDateTime now = Rtc.GetDateTime();
     uint8_t detik = now.Second();
     uint8_t menit = now.Minute();
     uint8_t jam = now.Hour();
-    char buff_jam[6];
-    char buff_menit[6];
-    static bool flag1 = false,flag2 = false;
+    char buff_jam[3];
+    char buff_menit[3];
+//    static bool flag1 = false,flag2 = false;
     
     snprintf(buff_jam, sizeof(buff_jam), "%02d", jam);
     snprintf(buff_menit, sizeof(buff_menit), "%02d", menit);
 
     fType(4);
-    Disp.drawText(16, 0, buff_jam); 
-    Disp.drawText(34, 0, buff_menit); 
+    Disp.drawText(16, -1, buff_jam); 
+    Disp.drawText(34, -1, buff_menit); 
 
     // Blink colon (titik dua) setiap detik
     if (detik & 1)
@@ -47,8 +44,11 @@ void drawTime()
         Disp.drawCircle(31, 11, 1, 0);
     }
 
+      logo1(48);
+      logo2(0);
+
     // Garis pemisah bawah
-    Disp.drawLine(0, 16, 64, 16);
+    Disp.drawLine(0, 15, 64, 15);
 
 //     if (jam >= 21  or jam < 3){
 //        Disp.setBrightness(20);  // Kecerahan 100% pada jam 02:00 - 10:00
@@ -62,14 +62,14 @@ void drawTime()
 ////        flag2 = true;
 //        //Serial.println(F("pagi"));
 //    }
-    
+    //DoSwap = true;
 }
 
 void drawDate(){
   static uint16_t x;
   if (reset_x !=0) { x=0;reset_x = 0;}
   static uint16_t fullScroll = 0;
-  //if(adzan) return;
+  if(adzan) return;
  
   RtcDateTime now = Rtc.GetDateTime();
   static uint32_t   lsRn;
@@ -101,7 +101,104 @@ void drawDate(){
  }
 }
 
-void runningTextInfo1() {
+void drawSmartText(const char* msg, uint8_t speed,uint8_t fontt) {
+  if(adzan) return;
+
+  if (msg == NULL || msg[0] == '\0') {
+    nextShowStateRun(); // Langsung baca state selanjutnya
+    return;             // Keluar dari fungsi agar tidak membuang CPU
+  }
+  
+  static uint16_t x = 0;
+  static uint16_t textW = 0;
+  static uint16_t fullScroll = 0;
+  static bool isScrolling = false;
+  static uint32_t diamTimer = 0; // Timer khusus untuk teks diam
+  
+  // Reset trigger dari luar (saat ganti menu/tampilan)
+  if (reset_x != 0) { 
+    x = 0; 
+    textW = 0;
+    reset_x = 0; 
+    return;
+  }
+
+  uint32_t Tmr = millis();
+  static uint32_t lss = 0;
+
+  // Render frame setiap 45ms (Kecepatan standar agar smooth)
+  if ((Tmr - lss) > speed) {
+    lss = Tmr;
+
+    fType(fontt);
+
+    // ==============================================================
+    // 1. OPTIMASI: Hitung lebar teks SEKALI SAJA di awal
+    // ==============================================================
+    if (textW == 0) {
+      textW = Disp.textWidth(msg);
+      
+      // Cek apakah lebar teks melebihi lebar layar 6 Panel (DWidth)
+      if (textW > DWidth) {
+        isScrolling = true;
+        fullScroll = textW + DWidth;
+      } else {
+        isScrolling = false;
+        diamTimer = Tmr; // Mulai argon timer untuk durasi teks diam
+      }
+      
+    }
+
+    // ==============================================================
+    // 2. LOGIKA TAMPILAN (Diam vs Berjalan)
+    // ==============================================================
+    if (isScrolling) {
+      // --- MODE BERJALAN (Lebih dari 6 Panel) ---
+      if (x < fullScroll) {
+        ++x;
+      } else {
+        x = 0; 
+        textW = 0;
+        fullScroll = 0;
+        
+        // Panggil fungsi ganti tampilan di sini jika diperlukan
+        nextShowStateRun(); 
+        return;
+      }
+      
+      // Render teks berjalan, posisi Y = 4 (tengah vertikal)
+      Disp.drawText(DWidth - x, 25, msg);
+      
+    } else {
+      // --- MODE DIAM (Kurang dari atau sama dengan 6 Panel) ---
+      dwCtr(0, 25, msg);
+      
+      // PENTING: Karena teks diam tidak punya titik akhir scroll,
+      // kita harus memberi batasan waktu tampil (misal: 5000 ms / 5 detik)
+      if (Tmr - diamTimer > 5000) {
+        textW = 0;
+        
+        // Panggil fungsi ganti tampilan di sini jika diperlukan
+        nextShowStateRun(); 
+        return;
+      }
+    }
+
+    DoSwap = true;
+  }
+}
+
+void nextShowStateRun()
+{ 
+  switch(show){
+    case ANIM_JAM:  show = ANIM_NAME; break;
+    case ANIM_NAME: show = ANIM_TEXT; break;
+    case ANIM_TEXT: show = ANIM_JAM;  break;
+  };
+ 
+}
+
+/*void runningTextInfo1() {
   static uint32_t x = 0;
   static uint32_t lsRn;
   uint32_t Tmr = millis();
@@ -128,7 +225,7 @@ void runningTextInfo1() {
     int16_t posX = Disp.width() - x;
     if (posX < -Disp.textWidth(msg_buffer)) { // Cegah teks keluar layar
       x = 0;
-      show = ANIM_INFO;
+      //show = ANIM_INFO;
       return;
     }
 
@@ -172,12 +269,12 @@ void runningTextInfo2() {
     x++; // Geser teks ke kiri
     DoSwap = true;
   }
-}
+}*/
 
 void jadwalSholat(){
  
-if (adzan) return;
-  float sholatT[]={JWS.floatImsak,JWS.floatSubuh,JWS.floatTerbit,JWS.floatDzuhur,JWS.floatAshar,JWS.floatMaghrib,JWS.floatIsya};
+  if (adzan) return;
+  float sholatT[]={JWS.floatSubuh,JWS.floatTerbit,JWS.floatDzuhur,JWS.floatAshar,JWS.floatMaghrib,JWS.floatIsya};
 
   RtcDateTime now = Rtc.GetDateTime();
   static uint8_t x = 0;
@@ -188,12 +285,12 @@ if (adzan) return;
 
   //int hours, minutes;
   char buff_jam[6]; // Format HH:MM hanya butuh 6 karakter
-  char sholat[8];   // Buffer untuk menyimpan nama sholat dari PROGMEM
+  char* sholat[] = {"SUBUH", "TERBIT", "DZUHUR", "ASHAR", "MAGRIB", "ISYA'"};   // Buffer untuk menyimpan nama sholat dari PROGMEM
 
   // Ambil nama sholat dari Flash
-  strcpy_P(sholat, jadwal[list]);
-
-    if((Tmr-lsRn)>55) 
+  //strcpy_P(sholat, jadwal[list]);
+           
+    if((Tmr-lsRn)>45) 
       { 
         if(s==0 and x<33){lsRn=Tmr; x++; }
         if(s==1 and x>0){lsRn=Tmr;x--; }
@@ -203,14 +300,11 @@ if (adzan) return;
 
    if (x == 0 && s == 1) { 
     s = 0;
-    list++; 
-    if (list == 4) list = 5;  
-    if (list == 7) list = 0;
-    //if(list == 0){ JadwalSholat(); }
+    list = (list + 1) % 6;
   }
 
   // Ambil nama sholat dari Flash
-  strcpy_P(sholat, jadwal[list]);
+  //strcpy_P(sholat, jadwal[list]);
 
   // ===== SHOLAT =====
   float st = sholatT[list];
@@ -222,13 +316,13 @@ if (adzan) return;
 
   // Tampilkan teks dengan animasi
   fType(3);
-  Disp.drawText(-33 + x, 17, sholat);
-  Disp.drawRect(-33 + x + 29, 17, -33 + x + 29, 23, 0);
+  Disp.drawText(-33 + x, 17, sholat[list]);
+  //Disp.drawRect(-33 + x + 29, 17, -33 + x + 29, 23, 0);
 
   fType(0);
   Disp.drawText(67 - x, 17, buff_jam);
-  Disp.drawRect(67 - x - 1, 17, 67 - x - 1, 23, 0);
-  DoSwap = true;
+  //Disp.drawRect(67 - x - 1, 17, 67 - x - 1, 23, 0);
+  //DoSwap = true;
 }
 
   
@@ -343,31 +437,33 @@ void blinkBlock()
         adzan = false;
         ct = 0;
         show = ANIM_JAM;
-        logo1(48);
-        logo2(0);
+//        logo1(48);
+//        logo2(0);
     }
 }
 
 
 
 void logo1 (uint8_t x){
-  if (adzan) return;
+  //if (adzan) return;
   static const uint8_t logo1[] PROGMEM = {
     16,16,
   0x00, 0x00, 0x0c, 0xc0, 0x0d, 0xc0, 0x19, 0xc1, 0x00, 0x03, 0x04, 0x0b, 0x4c, 0xdb, 0x9c, 0xdb, 0xbc, 0xdb, 0xfc, 0xdb, 0x6c, 0xdb, 0x0c, 0xdb, 0x0c, 0xdb, 0x0f, 0xfb, 0x07, 0x32, 0x00, 0x00
 
     //0x06, 0x60, 0x06, 0xe3, 0x0c, 0xe3, 0x00, 0x01, 0x02, 0x05, 0x06, 0x6d, 0x4e, 0x6d, 0x5e, 0x6d, 0x7e, 0x6d, 0x36, 0x6d, 0x06, 0x6d, 0x06, 0x6d, 0x06, 0x6d, 0x07, 0xfd, 0x03, 0x98, 0x00, 0x00
   };
-  Disp.drawBitmap(x,0,logo1);
+  Disp.drawBitmap(x,-1,logo1);
+  //DoSwap = true;
 }
 
 void logo2 (uint8_t x){
-  if (adzan) return;
+  //if (adzan) return;
   static const uint8_t logo2[] PROGMEM = {
     16,16,
     0x00, 0x00, 0x13, 0x00, 0x1b, 0x00, 0x18, 0x38, 0x08, 0x2c, 0x0c, 0x78, 0x0d, 0xf0, 0x07, 0x00, 0x07, 0xff, 0x0c, 0x7c, 0x1d, 0xe0, 0x77, 0x80, 0xe3, 0x80, 0x83, 0x80, 0x01, 0x80, 0x00, 0x00
 };
-  Disp.drawBitmap(x,0,logo2);
+  Disp.drawBitmap(x,-1,logo2);
+  //DoSwap = true;
 }
 /*======================================================================================*/
 void dwCtr(int8_t x, int8_t y, const char* Msg){

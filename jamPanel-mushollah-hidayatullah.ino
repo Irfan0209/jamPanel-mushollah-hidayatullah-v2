@@ -74,7 +74,7 @@ noEEPROM    value
 #define Font3 SmallCap4x6
 #define Font4 EMSans6x16
 
-//#define DEBUG 1
+#define DEBUG 1
 char password[20] = "00000000";
 
 // Object Declarations
@@ -146,7 +146,7 @@ bool       panelState = false; // false = OFF, true = ON
 /*============== end ================*/
 
 enum Show{
-  ANIM_INFO,
+  ANIM_NAME,
   ANIM_JAM,
   ANIM_TEXT,
   ANIM_SHOLAT,
@@ -296,7 +296,7 @@ void setup() {
   Serial.begin(9600);
   pinMode(BUZZ, OUTPUT); 
   EEPROM.begin(EEPROM_SIZE); // Inisialisasi EEPROM dengan ukuran yang ditentukan
-  digitalWrite(BUZZ,LOW);
+  digitalWrite(BUZZ,HIGH);
  
 
    uint8_t rtn = I2C_ClearBus(); // clear the I2C bus first before calling Wire.begin()
@@ -323,7 +323,7 @@ void setup() {
   delay(1000);
   
   Disp_init_esp();
-  Serial.println("PANEL_OK");
+  
   
   delay(1000);
   for(uint8_t i = 0; i < 4; i++)
@@ -334,31 +334,37 @@ void setup() {
       delay(80);
    }
    
-  
-  logo1(48);
-  logo2(0);
+  Serial.println("PANEL_OK");
+
 }
 
 void loop() {
+  handleSetTimeSerial();
+  
   DoSwap  = false ;
   Disp.clear();
+  
   check();
   islam();
+  
   jadwalSholat();
-  handleSetTimeSerial();
+  drawTime();
   
   switch(show) {
     case ANIM_JAM:
-      drawTime();
-      drawDate();
+      //drawTime();
+      //drawDate();
+      drawSmartText(showTanggal(),config.speedDate,0);
+      break;
+    case ANIM_NAME:
+      //drawTime();
+      //runningTextInfo1();
+      drawSmartText(config.name,config.speedName,0);
       break;
     case ANIM_TEXT:
-      drawTime();
-      runningTextInfo1();
-      break;
-    case ANIM_INFO:
-      drawTime();
-      runningTextInfo2();
+      //drawTime();
+     // runningTextInfo2();
+      drawSmartText(config.text1,config.speedText1,0);
       break;
     case ANIM_ADZAN:
       drawAzzan();
@@ -371,6 +377,7 @@ void loop() {
       break;
   };
   yield(); // Pastikan WiFi tetap berjalan
+  if(DoSwap){Disp.swapBuffers();} // Swap Buffer if Change
 }
 
 void getData(const char* data) {
@@ -602,7 +609,7 @@ void getData(const char* data) {
         Buzzer(1); 
         Serial.println(F("RESTART_OK")); 
         config.stateMode = 0;
-        EEPROM.write(ADDR_MODE, config.stateMode); 
+        //EEPROM.write(ADDR_MODE, config.stateMode); 
         delay(1000);
         ESP.restart();
       }
