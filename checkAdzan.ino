@@ -62,7 +62,7 @@ void check() {
           adzan = 1;
           reset_x = 1;
           show = ANIM_ADZAN;
-          //line = ANIM_ZONK;
+          Disp.clear();
           adzanFlag[counter] = true;
           
         }
@@ -77,9 +77,7 @@ void check() {
       adzanFlag[counter] = false;
     }
     
-    //counter++;
-    //if (counter >= 5) counter = 0;
-    counter = (counter + 1) % 6;
+    counter = (counter + 1) % 5;
   }
 
   // ================= KIRIM DATA JWS =================

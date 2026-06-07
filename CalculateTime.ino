@@ -22,14 +22,12 @@ void islam() {
 
   // Restart otomatis (opsional, dari kodemu)
   if (now.Minute() == 0 && now.Second() == 0 && now.Hour() == 0){
-    Serial.println("restart");
+    Serial.println(F("restart"));
     // ESP.restart(); // (Aktifkan jika memang alat diset untuk restart harian)
   }
 
   // --- EKSEKUSI RUMUS HANYA JIKA FLAG AKTIF ---
   if(butuhHitungJadwal){
-    // Pertanyaan: Kenapa i < 2 (dieksekusi dua kali)? 
-    // Jika library tidak wajib butuh 2 pass, i < 1 sudah cukup.
     for(uint8_t i = 0; i < 2; i++) {
       JWS.Update(config.zonawaktu, config.latitude, config.longitude, config.altitude, now.Year(), now.Month(), now.Day());
       JWS.setIkhtiSu = dataIhty[0];
